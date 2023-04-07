@@ -173,12 +173,14 @@ struct CAI_Network
 };
 #pragma pack(pop)
 
+char** pUnkServerMapversionGlobal;
+
 ConVar* Cvar_ns_ai_dumpAINfileFromLoad;
 
 void DumpAINInfo(CAI_Network* aiNetwork)
 {
 	fs::path writePath(fmt::format("{}/maps/graphs", R2::g_pModName));
-	writePath /= R2::g_pGlobals->m_pMapName;
+	writePath /= R2::g_pHostState->m_levelName;
 	writePath += ".ain";
 
 	// dump from memory
@@ -193,8 +195,9 @@ void DumpAINInfo(CAI_Network* aiNetwork)
 	spdlog::info("writing ainet version: {}", AINET_VERSION_NUMBER);
 	writeStream.write((char*)&AINET_VERSION_NUMBER, sizeof(int));
 
-	int mapVersion = R2::g_pGlobals->m_nMapVersion;
-	spdlog::info("writing map version: {}", mapVersion);
+	// could probably be cleaner but whatever
+	int mapVersion = *(int*)(*pUnkServerMapversionGlobal + 104);
+	spdlog::info("writing map version: {}", mapVersion); // temp
 	writeStream.write((char*)&mapVersion, sizeof(int));
 	spdlog::info("writing placeholder crc: {}", PLACEHOLDER_CRC);
 	writeStream.write((char*)&PLACEHOLDER_CRC, sizeof(int));
@@ -392,4 +395,5 @@ ON_DLL_LOAD("server.dll", BuildAINFile, (CModule module))
 	pppUnkNodeStruct0s = module.Offset(0x1063BE0).As<UnkNodeStruct0***>();
 	pUnkLinkStruct1Count = module.Offset(0x1063AA8).As<int*>();
 	pppUnkStruct1s = module.Offset(0x1063A90).As<UnkLinkStruct1***>();
+	pUnkServerMapversionGlobal = module.Offset(0xBFBE08).As<char**>();
 }
